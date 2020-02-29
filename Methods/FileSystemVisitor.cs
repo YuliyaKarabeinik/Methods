@@ -45,51 +45,44 @@ namespace Methods
                 catch (UnauthorizedAccessException) { continue; }
                 catch (DirectoryNotFoundException) { continue; }
 
-                foreach (var file in GetFiles(directoryContent))
+                foreach (var file in GetItems(directoryContent, true))
                 {
                     yield return file;
                 }
 
                 directoryContent = Directory.GetDirectories(rootFolderPath);
 
-                foreach (var directory in GetDirectories(directoryContent))
+                foreach (var directory in GetItems(directoryContent, false))
                 {
                     yield return directory;
                 }
             }
             Finish();
         }
-        
-        private IEnumerable<string> GetFiles(string[] directoryContent)
+
+        private IEnumerable<string> GetItems(string[] directoryContent, bool isFile)
         {
-            foreach (var file in directoryContent)
+            foreach (var item in directoryContent)
             {
-                if (searchPattern(file))
+                if (searchPattern(item))
                 {
-                    FilteredItemFound(true);
-                    yield return file;
+                    FilteredItemFound(isFile);
+                    yield return item;
                 }
                 else
                 {
-                    ItemFound(true);
+                    ItemFound(isFile);
                 }
+
+                EnqueueDirectory(item, isFile);
             }
         }
 
-        private IEnumerable<string> GetDirectories(string[] directoryContent)
+        private void EnqueueDirectory(string item, bool isFile)
         {
-            foreach (var directory in directoryContent)
+            if (!isFile)
             {
-                if (searchPattern(directory))
-                {
-                    FilteredItemFound(false);
-                    yield return directory;
-                }
-                else
-                {
-                    ItemFound(false);
-                }
-                pendingDirectories.Enqueue(directory);
+                pendingDirectories.Enqueue(item);
             }
         }
     }

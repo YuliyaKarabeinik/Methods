@@ -5,7 +5,7 @@ namespace Methods
 {
     class Program
     {
-        private static string path = "D:\\Business English";
+        private static string path = "D:\\";
         
         private static Regex searchTerm = new Regex(@"x$");
         
