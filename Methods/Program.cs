@@ -5,27 +5,24 @@ namespace Methods
 {
     class Program
     {
-        private static string path = "D:\\";
+        private static string path = "D:\\Business English";
         
-        private static Regex searchTerm = new Regex(@"x$");
+        private static readonly Regex searchTerm = new Regex(@"x$");
         
-        private static Func<string, bool> filter = fileName =>
-        {
-            var matches = searchTerm.Matches(fileName);
-            return matches.Count > 0;
-        };
+        private static readonly Func<string, bool> filter = fileName => searchTerm.IsMatch(fileName);
+
+        private static readonly bool onlyFilteredFiles = true;
+
+        private static readonly bool finishAfterFirstMatch = true;
+
 
         static void Main(string[] args)
         {
-            var fileVisitor = new FileSystemVisitor(filter);
+            var fileVisitor = new FileSystemVisitor(filter, onlyFilteredFiles, finishAfterFirstMatch);
             SubscribeToEvents(fileVisitor);
+
             var values = fileVisitor.GetDirectoryContent(path);
-
-            foreach (var value in values)
-            {
-               Console.WriteLine(value);
-            }
-
+            foreach (var value in values) { }
             Console.ReadKey();
         }
 
@@ -33,8 +30,10 @@ namespace Methods
         {
             fileVisitor.Start += ProgressReporter.StartMessage;
             fileVisitor.Finish += ProgressReporter.FinishMessage;
-            fileVisitor.ItemFound += ProgressReporter.ItemFoundMessage;
-            fileVisitor.FilteredItemFound += ProgressReporter.FilteredItemFoundMessage;
+            fileVisitor.FileFound += ProgressReporter.FileFoundMessage;
+            fileVisitor.DirectoryFound += ProgressReporter.DirectoryFoundMessage;
+            fileVisitor.FilteredFileFound += ProgressReporter.FilteredFileFoundMessage;
+            fileVisitor.FilteredDirectoryFound += ProgressReporter.FilteredDirectoryFoundMessage;
         }
     }
 }

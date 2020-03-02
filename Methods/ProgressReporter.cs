@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Methods
 {
@@ -15,16 +13,33 @@ namespace Methods
         {
             Console.WriteLine("Search finished.");
         }
-        public static void ItemFoundMessage(bool isFile)
+
+        public static void FileFoundMessage(object name, CustomEventArgs e)
         {
-            var message = isFile ? "File found." : "Directory found.";
-            Console.WriteLine(message);
+            if (!e.OnlyFiltered) Console.WriteLine($"File was found {name}" );
         }
 
-        public static void FilteredItemFoundMessage(bool isFile)
+        public static void DirectoryFoundMessage(object name, CustomEventArgs e)
         {
-            var message = isFile ? "Filtered file found." : "Filtered directory found.";
-            Console.WriteLine(message);
+            if (!e.OnlyFiltered) Console.WriteLine($"Directory was found {name}");
+        }
+        public static void FilteredFileFoundMessage(object name, CustomEventArgs e)
+        {
+            Console.WriteLine($"Filtered directory was found {name}");
+            if (e.FinishAfterFirstMatch) QuitConsole();
+        }
+
+        public static void FilteredDirectoryFoundMessage(object name, CustomEventArgs e)
+        {
+            Console.WriteLine($"Filtered directory was found {name}");
+            if (e.FinishAfterFirstMatch) QuitConsole();
+        }
+
+        private static void QuitConsole()
+        {
+            Console.WriteLine("Press any key to exit ...");
+            Console.ReadKey();
+            Environment.Exit(0);
         }
     }
 }

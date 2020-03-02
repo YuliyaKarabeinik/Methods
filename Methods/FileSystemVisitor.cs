@@ -6,9 +6,12 @@ namespace Methods
 {
     class FileSystemVisitor
     {
-        public FileSystemVisitor(Func<string, bool> searchPattern)
+        private CustomEventArgs args;
+
+        public FileSystemVisitor(Func<string, bool> searchPattern, bool onlyFiltered, bool finishAfterFirstMatch)
         {
             this.searchPattern = searchPattern;
+            args = new CustomEventArgs(onlyFiltered, finishAfterFirstMatch);
         }
 
         private readonly Func<string, bool> searchPattern;
@@ -17,15 +20,17 @@ namespace Methods
 
         public delegate void OnProgress();
 
-        public delegate void OnFind(bool isFile);
-
         public event OnProgress Start;
 
         public event OnProgress Finish;
 
-        public event OnFind ItemFound;
+        public event EventHandler<CustomEventArgs> FileFound;
 
-        public event OnFind FilteredItemFound;
+        public event EventHandler<CustomEventArgs> DirectoryFound;
+
+        public event EventHandler<CustomEventArgs> FilteredFileFound;
+
+        public event EventHandler<CustomEventArgs> FilteredDirectoryFound;
 
         public IEnumerable<string> GetDirectoryContent(string rootFolderPath)
         {
@@ -45,14 +50,14 @@ namespace Methods
                 catch (UnauthorizedAccessException) { continue; }
                 catch (DirectoryNotFoundException) { continue; }
 
-                foreach (var file in GetItems(directoryContent, true))
+                foreach (var file in GetFiles(directoryContent))
                 {
                     yield return file;
                 }
 
                 directoryContent = Directory.GetDirectories(rootFolderPath);
 
-                foreach (var directory in GetItems(directoryContent, false))
+                foreach (var directory in GetDirectories(directoryContent))
                 {
                     yield return directory;
                 }
@@ -60,29 +65,37 @@ namespace Methods
             Finish();
         }
 
-        private IEnumerable<string> GetItems(string[] directoryContent, bool isFile)
+        private IEnumerable<string> GetFiles(string[] directoryContent)
         {
-            foreach (var item in directoryContent)
+            foreach (var file in directoryContent)
             {
-                if (searchPattern(item))
+                if (searchPattern(file))
                 {
-                    FilteredItemFound(isFile);
-                    yield return item;
+                    FilteredFileFound(file, args);
+                    yield return file;
                 }
                 else
-                {
-                    ItemFound(isFile);
+                { 
+                    FileFound(file, args);
                 }
-
-                EnqueueDirectory(item, isFile);
             }
         }
 
-        private void EnqueueDirectory(string item, bool isFile)
+        private IEnumerable<string> GetDirectories(string[] directoryContent)
         {
-            if (!isFile)
+            foreach (var directory in directoryContent)
             {
-                pendingDirectories.Enqueue(item);
+                if (searchPattern(directory))
+                {
+                    FilteredDirectoryFound(directory, args);
+                    yield return directory;
+                }
+                else
+                {
+                    DirectoryFound(directory, args);
+
+                }
+                pendingDirectories.Enqueue(directory);
             }
         }
     }
