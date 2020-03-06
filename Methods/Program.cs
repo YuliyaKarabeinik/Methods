@@ -13,12 +13,13 @@ namespace Methods
 
         private static readonly bool onlyFilteredFiles = true;
 
-        private static readonly bool finishAfterFirstMatch = true;
+        private static readonly bool finishAfterFirstMatch = false;
 
 
         static void Main(string[] args)
         {
             var fileVisitor = new FileSystemVisitor(filter, onlyFilteredFiles, finishAfterFirstMatch);
+
             SubscribeToEvents(fileVisitor);
 
             var values = fileVisitor.GetDirectoryContent(path);

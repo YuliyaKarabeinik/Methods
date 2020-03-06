@@ -4,9 +4,11 @@ using System.IO;
 
 namespace Methods
 {
-    class FileSystemVisitor
+    public class FileSystemVisitor
     {
         private CustomEventArgs args;
+
+        private bool isStopped;
 
         public FileSystemVisitor(Func<string, bool> searchPattern, bool onlyFiltered, bool finishAfterFirstMatch)
         {
@@ -16,7 +18,7 @@ namespace Methods
 
         private readonly Func<string, bool> searchPattern;
 
-        private readonly Queue<string> pendingDirectories = new Queue<string>();
+        private readonly Queue<FileSystemInfo> pendingDirectories = new Queue<FileSystemInfo>();
 
         public delegate void OnProgress();
 
@@ -32,20 +34,22 @@ namespace Methods
 
         public event EventHandler<CustomEventArgs> FilteredDirectoryFound;
 
-        public IEnumerable<string> GetDirectoryContent(string rootFolderPath)
+        public IEnumerable<FileSystemInfo> GetDirectoryContent(string rootFolderPath)
         {
             Start();
-
-            pendingDirectories.Enqueue(rootFolderPath);
+            FileSystemInfo rootdir = new DirectoryInfo(rootFolderPath);
+            pendingDirectories.Enqueue(rootdir);
 
             while (pendingDirectories.Count > 0)
             {
-                string[] directoryContent;
-                rootFolderPath = pendingDirectories.Dequeue();
+                if (isStopped) break;
+                FileSystemInfo[] directoryContent;
+                rootdir = pendingDirectories.Dequeue();
+                var dir = new DirectoryInfo(rootdir.FullName);
 
                 try
                 {
-                    directoryContent = Directory.GetFiles(rootFolderPath);
+                    directoryContent = dir.GetFiles();
                 }
                 catch (UnauthorizedAccessException) { continue; }
                 catch (DirectoryNotFoundException) { continue; }
@@ -55,7 +59,7 @@ namespace Methods
                     yield return file;
                 }
 
-                directoryContent = Directory.GetDirectories(rootFolderPath);
+                directoryContent = dir.GetDirectories();
 
                 foreach (var directory in GetDirectories(directoryContent))
                 {
@@ -65,38 +69,45 @@ namespace Methods
             Finish();
         }
 
-        private IEnumerable<string> GetFiles(string[] directoryContent)
+        public IEnumerable<FileSystemInfo> GetFiles(FileSystemInfo[] directoryContent)
         {
             foreach (var file in directoryContent)
             {
-                if (searchPattern(file))
+                if (searchPattern(file.Name))
                 {
-                    FilteredFileFound(file, args);
+                    FilteredFileFound(file.FullName, args);
+                    if (IsIteratorBeStopped()) yield break;
                     yield return file;
                 }
                 else
-                { 
-                    FileFound(file, args);
+                {
+                    FileFound(file.FullName, args);
                 }
             }
         }
 
-        private IEnumerable<string> GetDirectories(string[] directoryContent)
+        public IEnumerable<FileSystemInfo> GetDirectories(FileSystemInfo[] directoryContent)
         {
             foreach (var directory in directoryContent)
             {
-                if (searchPattern(directory))
+                if (searchPattern(directory.Name))
                 {
-                    FilteredDirectoryFound(directory, args);
+                    FilteredDirectoryFound(directory.FullName, args);
+                    if (IsIteratorBeStopped()) yield break;
                     yield return directory;
                 }
                 else
                 {
-                    DirectoryFound(directory, args);
-
+                    DirectoryFound(directory.FullName, args);
                 }
                 pendingDirectories.Enqueue(directory);
             }
+        }
+
+        private bool IsIteratorBeStopped()
+        {
+            if (args.FinishAfterFirstMatch) isStopped = true;
+            return args.FinishAfterFirstMatch;
         }
     }
 }

@@ -25,21 +25,12 @@ namespace Methods
         }
         public static void FilteredFileFoundMessage(object name, CustomEventArgs e)
         {
-            Console.WriteLine($"Filtered directory was found {name}");
-            if (e.FinishAfterFirstMatch) QuitConsole();
+            Console.WriteLine($"Filtered file was found {name}");
         }
 
         public static void FilteredDirectoryFoundMessage(object name, CustomEventArgs e)
         {
             Console.WriteLine($"Filtered directory was found {name}");
-            if (e.FinishAfterFirstMatch) QuitConsole();
-        }
-
-        private static void QuitConsole()
-        {
-            Console.WriteLine("Press any key to exit ...");
-            Console.ReadKey();
-            Environment.Exit(0);
         }
     }
 }
