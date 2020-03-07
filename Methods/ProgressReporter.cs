@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Methods
 {
@@ -14,23 +15,20 @@ namespace Methods
             Console.WriteLine("Search finished.");
         }
 
-        public static void FileFoundMessage(object name, CustomEventArgs e)
+        public static void ItemFoundMessage(object item, CustomEventArgs e)
         {
-            if (!e.OnlyFiltered) Console.WriteLine($"File was found {name}" );
+            if (!e.OnlyFiltered) Console.WriteLine($"{GetItemType(item)} was found {item}");
         }
 
-        public static void DirectoryFoundMessage(object name, CustomEventArgs e)
+        public static void FilteredItemFoundMessage(object item, CustomEventArgs e)
         {
-            if (!e.OnlyFiltered) Console.WriteLine($"Directory was found {name}");
-        }
-        public static void FilteredFileFoundMessage(object name, CustomEventArgs e)
-        {
-            Console.WriteLine($"Filtered file was found {name}");
+            Console.WriteLine($"Filtered {GetItemType(item)} was found {item}");
         }
 
-        public static void FilteredDirectoryFoundMessage(object name, CustomEventArgs e)
+        private static string GetItemType(object item)
         {
-            Console.WriteLine($"Filtered directory was found {name}");
+            return ((FileSystemInfo)item).Attributes.HasFlag(FileAttributes.Directory) ? "Directory" : "File";
         }
     }
 }
+

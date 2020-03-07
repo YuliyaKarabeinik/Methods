@@ -33,10 +33,10 @@ namespace UnitTests
                 .Returns("test")
                 .Returns("nottest");
 
-            fileVisitor.FilteredFileFound += (name, e) => Console.WriteLine();
-            fileVisitor.FileFound += (name, e) => Console.WriteLine();
+            fileVisitor.FilteredItemFound += (name, e) => Console.WriteLine();
+            fileVisitor.ItemFound += (name, e) => Console.WriteLine();
 
-            var results = fileVisitor.GetFiles(new FileSystemInfo[] { mockFileSystemInfo.Object, mockFileSystemInfo.Object, mockFileSystemInfo.Object });
+            var results = fileVisitor.GetItems(new FileSystemInfo[] { mockFileSystemInfo.Object, mockFileSystemInfo.Object, mockFileSystemInfo.Object });
 
             results.Count().Should().Be(2);
         }

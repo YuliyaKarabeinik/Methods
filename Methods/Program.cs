@@ -11,18 +11,17 @@ namespace Methods
         
         private static readonly Func<string, bool> filter = fileName => searchTerm.IsMatch(fileName);
 
-        private static readonly bool onlyFilteredFiles = true;
+        private static readonly bool onlyFilteredFiles = false;
 
-        private static readonly bool finishAfterFirstMatch = false;
+        private static readonly bool finishAfterFirstMatch = true;
 
 
         static void Main(string[] args)
         {
             var fileVisitor = new FileSystemVisitor(filter, onlyFilteredFiles, finishAfterFirstMatch);
-
             SubscribeToEvents(fileVisitor);
 
-            var values = fileVisitor.GetDirectoryContent(path);
+            var values = fileVisitor.GetContent(path);
             foreach (var value in values) { }
             Console.ReadKey();
         }
@@ -31,10 +30,8 @@ namespace Methods
         {
             fileVisitor.Start += ProgressReporter.StartMessage;
             fileVisitor.Finish += ProgressReporter.FinishMessage;
-            fileVisitor.FileFound += ProgressReporter.FileFoundMessage;
-            fileVisitor.DirectoryFound += ProgressReporter.DirectoryFoundMessage;
-            fileVisitor.FilteredFileFound += ProgressReporter.FilteredFileFoundMessage;
-            fileVisitor.FilteredDirectoryFound += ProgressReporter.FilteredDirectoryFoundMessage;
+            fileVisitor.ItemFound += ProgressReporter.ItemFoundMessage;
+            fileVisitor.FilteredItemFound += ProgressReporter.FilteredItemFoundMessage;
         }
     }
 }

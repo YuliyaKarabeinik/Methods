@@ -6,9 +6,9 @@ namespace Methods
 {
     public class FileSystemVisitor
     {
-        private CustomEventArgs args;
-
-        private bool isStopped;
+        private readonly CustomEventArgs args;
+        
+        public FileSystemVisitor() : this(filename => true, false, false) { }
 
         public FileSystemVisitor(Func<string, bool> searchPattern, bool onlyFiltered, bool finishAfterFirstMatch)
         {
@@ -17,96 +17,36 @@ namespace Methods
         }
 
         private readonly Func<string, bool> searchPattern;
-
-        private readonly Queue<FileSystemInfo> pendingDirectories = new Queue<FileSystemInfo>();
-
+        
         public delegate void OnProgress();
 
         public event OnProgress Start;
 
         public event OnProgress Finish;
 
-        public event EventHandler<CustomEventArgs> FileFound;
+        public event EventHandler<CustomEventArgs> ItemFound;
 
-        public event EventHandler<CustomEventArgs> DirectoryFound;
+        public event EventHandler<CustomEventArgs> FilteredItemFound;
 
-        public event EventHandler<CustomEventArgs> FilteredFileFound;
-
-        public event EventHandler<CustomEventArgs> FilteredDirectoryFound;
-
-        public IEnumerable<FileSystemInfo> GetDirectoryContent(string rootFolderPath)
+        public IEnumerable<FileSystemInfo> GetContent(string rootFolderPath)
         {
             Start();
-            FileSystemInfo rootdir = new DirectoryInfo(rootFolderPath);
-            pendingDirectories.Enqueue(rootdir);
-
-            while (pendingDirectories.Count > 0)
+            var directory = new DirectoryInfo(rootFolderPath);
+            var content = directory.GetFileSystemInfos("*", SearchOption.AllDirectories);
+            foreach (var item in content)
             {
-                if (isStopped) break;
-                FileSystemInfo[] directoryContent;
-                rootdir = pendingDirectories.Dequeue();
-                var dir = new DirectoryInfo(rootdir.FullName);
-
-                try
+                if (searchPattern(item.Name))
                 {
-                    directoryContent = dir.GetFiles();
+                    FilteredItemFound(item, args);
+                    if (IsIteratorBeStopped()) yield break;
+                    yield return item;
                 }
-                catch (UnauthorizedAccessException) { continue; }
-                catch (DirectoryNotFoundException) { continue; }
-
-                foreach (var file in GetFiles(directoryContent))
-                {
-                    yield return file;
-                }
-
-                directoryContent = dir.GetDirectories();
-
-                foreach (var directory in GetDirectories(directoryContent))
-                {
-                    yield return directory;
-                }
+                else ItemFound(item, args);
             }
             Finish();
         }
-
-        public IEnumerable<FileSystemInfo> GetFiles(FileSystemInfo[] directoryContent)
-        {
-            foreach (var file in directoryContent)
-            {
-                if (searchPattern(file.Name))
-                {
-                    FilteredFileFound(file.FullName, args);
-                    if (IsIteratorBeStopped()) yield break;
-                    yield return file;
-                }
-                else
-                {
-                    FileFound(file.FullName, args);
-                }
-            }
-        }
-
-        public IEnumerable<FileSystemInfo> GetDirectories(FileSystemInfo[] directoryContent)
-        {
-            foreach (var directory in directoryContent)
-            {
-                if (searchPattern(directory.Name))
-                {
-                    FilteredDirectoryFound(directory.FullName, args);
-                    if (IsIteratorBeStopped()) yield break;
-                    yield return directory;
-                }
-                else
-                {
-                    DirectoryFound(directory.FullName, args);
-                }
-                pendingDirectories.Enqueue(directory);
-            }
-        }
-
         private bool IsIteratorBeStopped()
         {
-            if (args.FinishAfterFirstMatch) isStopped = true;
             return args.FinishAfterFirstMatch;
         }
     }
